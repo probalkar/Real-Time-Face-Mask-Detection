@@ -8,6 +8,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from deepface import DeepFace
+import json
 
 # Load the trained mask detection model
 model = load_model("mask_detection_model.h5")
@@ -93,4 +94,6 @@ ice_configuration = {
 
 peer_connection = RTCPeerConnection(configuration=ice_configuration)
 
-webrtc_streamer(key="example", video_frame_callback=callback, media_stream_constraints={"video":True, "audio":False}, rtc_configuration=peer_connection)
+ice_config_json = json.dumps(peer_connection)
+
+webrtc_streamer(key="example", video_frame_callback=callback, media_stream_constraints={"video":True, "audio":False}, rtc_configuration=ice_config_json)
