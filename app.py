@@ -1,5 +1,6 @@
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer
+from aiortc import RTCPeerConnection, RTCIceServer
 import av
 import cv2
 import numpy as np
@@ -84,7 +85,12 @@ def callback(frame):
 
     return av.VideoFrame.from_ndarray(flipped, format="bgr24")
 
+ice_configuration = {
+    "iceServers": [{"urls": "turn:openrelay.metered.ca:80",
+                   "username": "openrelayproject",
+                   "credential": "openrelayproject"}]
+}
 
-webrtc_streamer(key="example", video_frame_callback=callback, media_stream_constraints={"video":True, "audio":False}, rtc_configuration={"iceServers": [{"urls": 'turn:openrelay.metered.ca:80',
-            "username": 'openrelayproject',
-            "credentials": 'openrelayproject'}]})
+peer_connection = RTCPeerConnection(configuration=ice_configuration)
+
+webrtc_streamer(key="example", video_frame_callback=callback, media_stream_constraints={"video":True, "audio":False}, rtc_configuration=peer_connection)
