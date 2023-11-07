@@ -29,63 +29,45 @@ def detect_mask(frame):
 # Streamlit web app
 st.title("Real-time Mask Detection")
 
-def video_frame_callback(frame):
-    img = frame.to_ndarray(format="bgr24")
-
-    # flipped = img[::-1,:,:]
-
-    return av.VideoFrame.from_ndarray(flipped, format="bgr24")
+# st.title("My first Streamlit app")
+# st.write("Hello, world")
 
 
-webrtc_streamer(key="example",
-        video_frame_callback=video_frame_callback,
-        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-        media_stream_constraints={"video": True, "audio": False})
+def callback(frame):
+    # img = frame.to_ndarray(format="bgr24")
+    # img = cv2.cvtColor(cv2.Canny(img, 100, 200), cv2.COLOR_GRAY2BGR)
+    # flipped = img[:,::-1,:]
 
-# Open the webcam
-cap = cv2.VideoCapture(0)
+    # Perform mask detection
+    predictions = detect_mask(frame)
+    label = "Mask" if np.argmax(predictions) == 1 else "No Mask"
+    color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
 
-if not cap.isOpened():
-    st.error("Error: Could not open webcam.")
-
-else:
-    stframe = st.empty()
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            st.error("Error: Unable to capture frame.")
-            break
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
         
+    # Display the frame with the label
+    for (x, y, w, h) in faces:
+        face = frame[y:y + h, x:x + w]
+
         # Perform mask detection
+        # ... Your mask detection code here ...
         predictions = detect_mask(frame)
         label = "Mask" if np.argmax(predictions) == 1 else "No Mask"
         color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-        
-        # Display the frame with the label
-        for (x, y, w, h) in faces:
-            face = frame[y:y + h, x:x + w]
+        # If no mask is detected, estimate age and gender
+        if label == "No Mask":
+            results = DeepFace.analyze(frame[y:y+h, x:x+w], actions=['age', 'gender'], enforce_detection=False)
+            results = results[0]
+            age = results['age']
+            gender = results['dominant_gender']
+            # print(results)
+            # print(type(results[0]))
 
-            # Perform mask detection
-            # ... Your mask detection code here ...
-            predictions = detect_mask(frame)
-            label = "Mask" if np.argmax(predictions) == 1 else "No Mask"
-            color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
-
-            # If no mask is detected, estimate age and gender
-            if label == "No Mask":
-                results = DeepFace.analyze(frame[y:y+h, x:x+w], actions=['age', 'gender'], enforce_detection=False)
-                results = results[0]
-                age = results['age']
-                gender = results['dominant_gender']
-                # print(results)
-                # print(type(results[0]))
-
-                # Display age and gender estimation
-                cv2.putText(frame, f'Age: {age:.1f} years', (x, y - 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-                cv2.putText(frame, f'Gender: {gender}', (x, y - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            # Display age and gender estimation
+            cv2.putText(frame, f'Age: {age:.1f} years', (x, y - 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            cv2.putText(frame, f'Gender: {gender}', (x, y - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
             # Display mask detection result
             # ... Your mask detection display code here ...
@@ -96,10 +78,11 @@ else:
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
         # Display the frame using Streamlit
-        stframe.image(frame_rgb, channels="RGB", use_column_width=True)
-        
-        if cv2.waitKey(1) & 0xFF == 27:
-            break
+        # stframe.image(frame_rgb, channels="RGB", use_column_width=True)
+        img = frame_rgb.to_ndarray(format="bgr24")
+        flipped = img[:,::-1,:]
 
-    cap.release()
-    cv2.destroyAllWindows()
+    return av.VideoFrame.from_ndarray(flipped, format="bgr24")
+
+
+webrtc_streamer(key="example", video_frame_callback=callback, media_stream_constraints={"video":True, "audio":False})
