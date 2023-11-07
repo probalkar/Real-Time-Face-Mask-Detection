@@ -85,4 +85,4 @@ def callback(frame):
     return av.VideoFrame.from_ndarray(flipped, format="bgr24")
 
 
-webrtc_streamer(key="example", video_frame_callback=callback, media_stream_constraints={"video":True, "audio":False})
+webrtc_streamer(key="example", video_frame_callback=callback, media_stream_constraints={"video":True, "audio":False}, rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
