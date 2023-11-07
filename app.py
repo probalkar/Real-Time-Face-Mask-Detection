@@ -1,14 +1,10 @@
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer
-from aiortc import RTCPeerConnection, RTCIceServer
-import av
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from deepface import DeepFace
-import json
 
 # Load the trained mask detection model
 model = load_model("mask_detection_model.h5")
@@ -31,45 +27,50 @@ def detect_mask(frame):
 # Streamlit web app
 st.title("Real-time Mask Detection")
 
-# st.title("My first Streamlit app")
-# st.write("Hello, world")
+# Open the webcam
+cap = cv2.VideoCapture(0)
 
+if not cap.isOpened():
+    st.error("Error: Could not open webcam.")
 
-def callback(frame):
-    # img = frame.to_ndarray(format="bgr24")
-    # img = cv2.cvtColor(cv2.Canny(img, 100, 200), cv2.COLOR_GRAY2BGR)
-    # flipped = img[:,::-1,:]
-
-    # Perform mask detection
-    predictions = detect_mask(frame)
-    label = "Mask" if np.argmax(predictions) == 1 else "No Mask"
-    color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
-
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+else:
+    stframe = st.empty()
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            st.error("Error: Unable to capture frame.")
+            break
         
-    # Display the frame with the label
-    for (x, y, w, h) in faces:
-        face = frame[y:y + h, x:x + w]
-
         # Perform mask detection
-        # ... Your mask detection code here ...
         predictions = detect_mask(frame)
         label = "Mask" if np.argmax(predictions) == 1 else "No Mask"
         color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
 
-        # If no mask is detected, estimate age and gender
-        if label == "No Mask":
-            results = DeepFace.analyze(frame[y:y+h, x:x+w], actions=['age', 'gender'], enforce_detection=False)
-            results = results[0]
-            age = results['age']
-            gender = results['dominant_gender']
-            # print(results)
-            # print(type(results[0]))
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        
+        # Display the frame with the label
+        for (x, y, w, h) in faces:
+            face = frame[y:y + h, x:x + w]
 
-            # Display age and gender estimation
-            cv2.putText(frame, f'Age: {age:.1f} years', (x, y - 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-            cv2.putText(frame, f'Gender: {gender}', (x, y - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            # Perform mask detection
+            # ... Your mask detection code here ...
+            predictions = detect_mask(frame)
+            label = "Mask" if np.argmax(predictions) == 1 else "No Mask"
+            color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+
+            # If no mask is detected, estimate age and gender
+            if label == "No Mask":
+                results = DeepFace.analyze(frame[y:y+h, x:x+w], actions=['age', 'gender'], enforce_detection=False)
+                results = results[0]
+                age = results['age']
+                gender = results['dominant_gender']
+                # print(results)
+                # print(type(results[0]))
+
+                # Display age and gender estimation
+                cv2.putText(frame, f'Age: {age:.1f} years', (x, y - 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                cv2.putText(frame, f'Gender: {gender}', (x, y - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
             # Display mask detection result
             # ... Your mask detection display code here ...
@@ -80,20 +81,10 @@ def callback(frame):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
         # Display the frame using Streamlit
-        # stframe.image(frame_rgb, channels="RGB", use_column_width=True)
-        img = frame_rgb.to_ndarray(format="bgr24")
-        flipped = img[:,::-1,:]
+        stframe.image(frame_rgb, channels="RGB", use_column_width=True)
+        
+        if cv2.waitKey(1) & 0xFF == 27:
+            break
 
-    return av.VideoFrame.from_ndarray(flipped, format="bgr24")
-
-ice_configuration = {
-    "iceServers": [{"urls": "turn:openrelay.metered.ca:80",
-                   "username": "openrelayproject",
-                   "credential": "openrelayproject"}]
-}
-
-peer_connection = RTCPeerConnection(configuration=ice_configuration)
-
-ice_config_json = json.dumps(ice_configuration)
-
-webrtc_streamer(key="example", video_frame_callback=callback, media_stream_constraints={"video":True, "audio":False}, rtc_configuration=ice_config_json)
+    cap.release()
+    cv2.destroyAllWindows()
