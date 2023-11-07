@@ -94,6 +94,6 @@ ice_configuration = {
 
 peer_connection = RTCPeerConnection(configuration=ice_configuration)
 
-ice_config_json = json.dumps(peer_connection)
+ice_config_json = json.dumps(ice_configuration)
 
 webrtc_streamer(key="example", video_frame_callback=callback, media_stream_constraints={"video":True, "audio":False}, rtc_configuration=ice_config_json)
