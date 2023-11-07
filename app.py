@@ -87,4 +87,4 @@ def callback(frame):
 
 webrtc_streamer(key="example", video_frame_callback=callback, media_stream_constraints={"video":True, "audio":False}, rtc_configuration={"iceServers": [{"urls": 'turn:openrelay.metered.ca:80',
             "username": 'openrelayproject',
-            "credentials": 'openrelayproject']}]})
+            "credentials": 'openrelayproject'}]})
