@@ -25,7 +25,7 @@ def detect_mask(frame):
     return predictions
 
 # Streamlit web app
-st.title("Real-time Mask Detection")
+st.title("Real-time Face Mask Detection")
 
 # Open the webcam
 cap = cv2.VideoCapture(0)
@@ -47,14 +47,13 @@ else:
         color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(100, 100))
         
         # Display the frame with the label
         for (x, y, w, h) in faces:
             face = frame[y:y + h, x:x + w]
 
             # Perform mask detection
-            # ... Your mask detection code here ...
             predictions = detect_mask(frame)
             label = "Mask" if np.argmax(predictions) == 1 else "No Mask"
             color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
@@ -73,7 +72,6 @@ else:
                 cv2.putText(frame, f'Gender: {gender}', (x, y - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
             # Display mask detection result
-            # ... Your mask detection display code here ...
             cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
             cv2.putText(frame, label, (x,y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
         
@@ -83,8 +81,7 @@ else:
         # Display the frame using Streamlit
         stframe.image(frame_rgb, channels="RGB", use_column_width=True)
         
-        if cv2.waitKey(1) & 0xFF == 27:
-            break
+        cv2.waitKey(1)
 
     cap.release()
     cv2.destroyAllWindows()
