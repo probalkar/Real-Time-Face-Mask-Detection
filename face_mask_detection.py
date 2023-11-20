@@ -25,7 +25,7 @@ for layer in base_model.layers:
 
 # Compile the model
 opt = Adam(lr=1e-4)
-model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
+model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
 
 # Data augmentation and preprocessing
 train_datagen = ImageDataGenerator(
